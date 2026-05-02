@@ -22,7 +22,8 @@ swift build -c release --disable-sandbox --cache-path ./.swiftpm-cache
 BIN_DIR="$(swift build -c release --disable-sandbox --cache-path ./.swiftpm-cache --show-bin-path)"
 EXECUTABLE_PATH="$BIN_DIR/$APP_NAME"
 
-rm -rf "$BUNDLE_PATH" "$ICONSET_DIR" "$ICON_PNG" "$ZIP_PATH"
+find "$DIST_DIR" -maxdepth 1 -type d -name "$APP_NAME*.app" -exec rm -rf {} +
+rm -rf "$ICONSET_DIR" "$ICON_PNG" "$ZIP_PATH"
 mkdir -p "$BUNDLE_PATH/Contents/MacOS" "$BUNDLE_PATH/Contents/Resources"
 
 cp "$EXECUTABLE_PATH" "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"

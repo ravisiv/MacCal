@@ -13,8 +13,10 @@ MacCal is a lightweight native macOS menu bar calendar. It opens from the menu b
 - U.S. and India holiday markers
 - Apple Calendar/EventKit event markers
 - Calendar selection in Options
+- Calendar diagnostics in Options
 - Calendar-colored event dots
 - Hover cards for event and holiday details
+- Accessibility labels for calendar controls
 - Optional launch at login
 - Alternate menu bar display formats
 - Right-click menu with Options and Quit
@@ -45,6 +47,7 @@ Or use the helper:
 
 ```bash
 ./script/package_app.sh
+./script/validate_package.sh
 ```
 
 This creates:
@@ -53,6 +56,16 @@ This creates:
 - `dist/MacCal-0.1.0.zip`
 
 The package is currently ad-hoc signed for local use. Public distribution will need Developer ID signing and notarization.
+
+## Release Readiness
+
+Before MacCal is shared as public software, it should have:
+
+- Developer ID signing with hardened runtime
+- Notarization and stapling
+- A polished `.icns` app icon
+- A clear release channel, either manual GitHub Releases or Sparkle signed auto-updates
+- A quick verification pass for calendar permissions, idle CPU, memory use, and popover open latency
 
 ## Notes
 

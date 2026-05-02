@@ -58,6 +58,7 @@ Build MacCal, a native macOS menu bar calendar app that opens instantly from the
 - The app must open the popover very quickly after the menu bar item is clicked.
 - The app must have a very low memory footprint.
 - The app must have a very low CPU footprint while idle.
+- The app should define and track a lightweight performance budget: effectively zero idle CPU, scoped visible-range calendar fetches, and a popover that appears without noticeable delay.
 - The app should avoid background polling unless absolutely necessary.
 - The calendar view should be lightweight and render using native macOS UI where practical.
 - Date calculations should be simple, deterministic, and cached or recomputed only when needed.
@@ -91,9 +92,16 @@ Build MacCal, a native macOS menu bar calendar app that opens instantly from the
 - The menu bar icon/date should refresh automatically after midnight.
 - Debug or development builds must not repeatedly add duplicate login items.
 - If calendar events are enabled but no calendars or visible events are available, Options should show a concise status.
+- Options should show calendar diagnostics including permission state, calendar count, selected calendar count, last refresh time, and recent EventKit errors when available.
+- Calendar selection should group duplicate calendar names cleanly and make the source/account context understandable when possible.
+- Calendar selection should include Select All and Select None controls.
 - The app should preserve the original low-footprint goal: idle CPU should remain effectively zero, and calendar/event fetches should be scoped to visible ranges.
 - Before packaging, the app should have stable identity metadata: bundle identifier, version, category, usage descriptions, entitlements, and app icon.
 - If calendar permission is denied or unavailable, the app should fail quietly and continue showing the date calendar and holidays.
+- Hover detail cards must stay within the popover bounds near left/right/top/bottom edges.
+- The calendar UI should include useful accessibility labels for day cells, navigation controls, and options controls.
+- The Options window should avoid layout jumps when calendar event settings are toggled.
+- The app should include focused tests for date grid generation, start-of-week behavior, today reset assumptions, holiday/event deduping, and month/year navigation logic.
 
 ## Calendar Event Requirements
 
@@ -132,6 +140,16 @@ Build MacCal, a native macOS menu bar calendar app that opens instantly from the
 - The app should handle failed network requests silently and continue showing bundled fallback holidays.
 - Holiday source metadata should be stored with cached holiday data so the app can show or debug where the data came from.
 - Holiday refresh should happen automatically; the user should not need to manually refresh holiday data in normal use.
+
+## Packaging, Signing, and Update Requirements
+
+- Local packaging should continue to produce a usable `.app` and zip artifact.
+- Public distribution should use Developer ID signing, hardened runtime, notarization, and stapling before sharing outside the developer's machine.
+- Packaging validation should check bundle metadata, entitlements, code signature status, and archive output.
+- The app should have a polished `.icns` app icon before public distribution.
+- Auto-update should be deferred until packaging and signing are stable.
+- When auto-update is added, it should use an industry-standard macOS update path such as Sparkle with signed updates, or a documented manual GitHub Releases flow.
+- Auto-update failures must fail quietly and must not interrupt the user during normal calendar use.
 
 ## Initial Assumptions
 

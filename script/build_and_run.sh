@@ -29,7 +29,7 @@ swift build --disable-sandbox --cache-path ./.swiftpm-cache
 BIN_DIR="$(swift build --disable-sandbox --cache-path ./.swiftpm-cache --show-bin-path)"
 EXECUTABLE_PATH="$BIN_DIR/$APP_NAME"
 
-rm -rf "$BUNDLE_PATH"
+find "$DIST_DIR" -maxdepth 1 -type d -name "$APP_NAME*.app" -exec rm -rf {} +
 mkdir -p "$BUNDLE_PATH/Contents/MacOS" "$BUNDLE_PATH/Contents/Resources"
 cp "$EXECUTABLE_PATH" "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"
 chmod +x "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"

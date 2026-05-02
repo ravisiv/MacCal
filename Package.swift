@@ -24,6 +24,10 @@ let package = Package(
                     "-Xlinker", "Sources/MacCal/Info.plist"
                 ])
             ]
+        ),
+        .testTarget(
+            name: "MacCalTests",
+            dependencies: ["MacCal"]
         )
     ]
 )

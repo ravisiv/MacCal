@@ -145,6 +145,7 @@ struct CalendarPopoverView: View {
                             copyDate(day.date)
                         }
                     }
+                    .accessibilityLabel(accessibilityLabel(for: day))
                 }
             }
 
@@ -181,7 +182,9 @@ struct CalendarPopoverView: View {
                             .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                     }
                     .offset(x: hoverCardXOffset(for: day), y: -38)
+                    .offset(y: hoverCardYOffset(for: day))
                     .zIndex(10)
+                    .accessibilityHidden(true)
             }
         }
         .frame(width: 38, height: 34)
@@ -221,16 +224,20 @@ struct CalendarPopoverView: View {
     private func hoverCardXOffset(for day: CalendarDay) -> CGFloat {
         switch day.weekdayColumn {
         case 0:
-            return 84
+            return 112
         case 1:
-            return 48
+            return 66
         case 5:
-            return -48
+            return -66
         case 6:
-            return -84
+            return -112
         default:
             return 0
         }
+    }
+
+    private func hoverCardYOffset(for day: CalendarDay) -> CGFloat {
+        day.row == 0 ? 58 : 0
     }
 
     private func deduplicatedEvents(for day: CalendarDay) -> [CalendarEvent] {
@@ -318,7 +325,7 @@ struct CalendarPopoverView: View {
             }
 
             if !day.events.isEmpty {
-                ForEach(Array(day.eventMarkerColors.enumerated()), id: \.offset) { _, color in
+                ForEach(Array(day.eventMarkerColors.prefix(3).enumerated()), id: \.offset) { _, color in
                     Circle()
                         .fill(color)
                         .frame(width: 5, height: 5)
@@ -353,13 +360,7 @@ struct CalendarPopoverView: View {
     }
 
     private var visibleGridRange: DateInterval? {
-        guard let first = calendarDays.first?.date,
-              let last = calendarDays.last?.date,
-              let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: last)) else {
-            return nil
-        }
-
-        return DateInterval(start: calendar.startOfDay(for: first), end: end)
+        CalendarGrid.visibleRange(for: gridEntries, calendar: calendar)
     }
 
     private var calendar: Calendar {
@@ -407,23 +408,22 @@ struct CalendarPopoverView: View {
     }
 
     private var calendarDays: [CalendarDay] {
-        let monthStart = calendar.startOfMonth(for: visibleMonth)
-        let firstWeekdayOffset = normalizedWeekdayOffset(for: monthStart)
-        let totalSlots = 42
-        let gridStart = calendar.date(byAdding: .day, value: -firstWeekdayOffset, to: monthStart) ?? monthStart
-
-        return (0..<totalSlots).compactMap { offset in
-            guard let date = calendar.date(byAdding: .day, value: offset, to: gridStart) else { return nil }
+        gridEntries.map { entry in
             return CalendarDay(
-                date: date,
-                weekdayColumn: offset % 7,
-                isInVisibleMonth: calendar.isDate(date, equalTo: monthStart, toGranularity: .month),
-                isToday: calendar.isDateInToday(date),
-                isSelected: selectedDate.map { calendar.isDate(date, inSameDayAs: $0) } ?? false,
-                holidays: filteredHolidays(for: date),
-                events: events(for: date)
+                date: entry.date,
+                weekdayColumn: entry.weekdayColumn,
+                row: entry.row,
+                isInVisibleMonth: entry.isInVisibleMonth,
+                isToday: calendar.isDateInToday(entry.date),
+                isSelected: selectedDate.map { calendar.isDate(entry.date, inSameDayAs: $0) } ?? false,
+                holidays: filteredHolidays(for: entry.date),
+                events: events(for: entry.date)
             )
         }
+    }
+
+    private var gridEntries: [CalendarGridEntry] {
+        CalendarGrid.entries(for: visibleMonth, calendar: calendar)
     }
 
     private var visibleYear: Int {
@@ -524,11 +524,6 @@ struct CalendarPopoverView: View {
         NSPasteboard.general.setString(formatter.string(from: date), forType: .string)
     }
 
-    private func normalizedWeekdayOffset(for date: Date) -> Int {
-        let weekday = calendar.component(.weekday, from: date)
-        return (weekday - calendar.firstWeekday + 7) % 7
-    }
-
     private func textColor(for day: CalendarDay) -> Color {
         if day.isSelected {
             return .white
@@ -560,6 +555,30 @@ struct CalendarPopoverView: View {
                 .fill(Color.clear)
         }
     }
+
+    private func accessibilityLabel(for day: CalendarDay) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.calendar = calendar
+        formatter.dateStyle = .full
+        formatter.timeStyle = .none
+
+        var parts = [formatter.string(from: day.date)]
+        if day.isToday {
+            parts.append("today")
+        }
+        if day.isSelected {
+            parts.append("selected")
+        }
+        if !day.holidays.isEmpty {
+            parts.append(day.holidays.displayText)
+        }
+        if !day.events.isEmpty {
+            let eventCount = deduplicatedEvents(for: day).count
+            parts.append(eventCount == 1 ? "1 event" : "\(eventCount) events")
+        }
+        return parts.joined(separator: ", ")
+    }
 }
 
 private enum PickerMode {
@@ -571,6 +590,7 @@ private enum PickerMode {
 private struct CalendarDay: Identifiable {
     let date: Date
     let weekdayColumn: Int
+    let row: Int
     let isInVisibleMonth: Bool
     let isToday: Bool
     let isSelected: Bool
@@ -589,19 +609,12 @@ private struct CalendarDay: Identifiable {
 
     var eventMarkerColors: [Color] {
         var seen: Set<String> = []
-        return events.compactMap { event in
+        return events.compactMap { event -> Color? in
             if seen.insert(event.calendarTitle).inserted {
                 return event.calendarColor
             }
             return nil
-        }.prefix(3).map { $0 }
-    }
-}
-
-private extension Calendar {
-    func startOfMonth(for date: Date) -> Date {
-        let components = dateComponents([.year, .month], from: date)
-        return self.date(from: components) ?? startOfDay(for: date)
+        }
     }
 }
 

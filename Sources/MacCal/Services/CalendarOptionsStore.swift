@@ -6,12 +6,16 @@ final class CalendarOptionsStore: ObservableObject {
     @Published private(set) var calendars: [CalendarInfo] = []
     @Published private(set) var calendarGroups: [CalendarGroupInfo] = []
     @Published private(set) var authorizationStatus: EKAuthorizationStatus = EKEventStore.authorizationStatus(for: .event)
+    @Published private(set) var lastRefreshDate: Date?
+    @Published private(set) var lastErrorText: String?
     @Published var selectedIDs: Set<String> = MacCalPreferences.selectedCalendarIDs()
 
     private let eventStore = EKEventStore()
 
     func refresh() {
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)
+        lastRefreshDate = Date()
+        lastErrorText = UserDefaults.standard.string(forKey: MacCalPreferences.lastCalendarEventErrorKey).flatMap { $0.isEmpty ? nil : $0 }
         guard authorizationStatus == .fullAccess else {
             calendars = []
             calendarGroups = []
@@ -24,6 +28,7 @@ final class CalendarOptionsStore: ObservableObject {
                 CalendarInfo(
                     id: calendar.calendarIdentifier,
                     title: calendar.title,
+                    sourceTitle: calendar.source.title,
                     color: Color(nsColor: calendar.color)
                 )
             }
@@ -42,6 +47,7 @@ final class CalendarOptionsStore: ObservableObject {
                     _ = try await eventStore.requestFullAccessToEvents()
                 }
             } catch {
+                lastErrorText = error.localizedDescription
                 NSLog("MacCal calendar access request failed from Options: \(error.localizedDescription)")
             }
 
@@ -55,6 +61,16 @@ final class CalendarOptionsStore: ObservableObject {
         } else {
             selectedIDs.remove(calendarID)
         }
+        MacCalPreferences.setSelectedCalendarIDs(selectedIDs)
+    }
+
+    func selectAllCalendars() {
+        selectedIDs = Set(calendars.map(\.id))
+        MacCalPreferences.setSelectedCalendarIDs(selectedIDs)
+    }
+
+    func selectNoCalendars() {
+        selectedIDs = []
         MacCalPreferences.setSelectedCalendarIDs(selectedIDs)
     }
 
@@ -80,6 +96,7 @@ final class CalendarOptionsStore: ObservableObject {
                 id: sorted.map(\.id).joined(separator: "|"),
                 title: sorted.first?.title ?? "Untitled",
                 calendarIDs: sorted.map(\.id),
+                sourceTitles: Array(Set(sorted.map(\.sourceTitle))).sorted(),
                 colors: sorted.map(\.color)
             )
         }

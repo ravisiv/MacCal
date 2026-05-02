@@ -7,6 +7,8 @@ enum MacCalPreferences {
     static let menuBarDisplayFormatKey = "menuBarDisplayFormat"
     static let selectedCalendarIDsKey = "selectedCalendarIDs"
     static let calendarSelectionVersionKey = "calendarSelectionVersion"
+    static let lastCalendarEventRefreshKey = "lastCalendarEventRefresh"
+    static let lastCalendarEventErrorKey = "lastCalendarEventError"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -15,7 +17,9 @@ enum MacCalPreferences {
             showCalendarEventsKey: false,
             selectedCalendarIDsKey: [],
             calendarSelectionVersionKey: 0,
-            menuBarDisplayFormatKey: MenuBarDisplayFormat.calendarIcon.rawValue
+            menuBarDisplayFormatKey: MenuBarDisplayFormat.calendarIcon.rawValue,
+            lastCalendarEventRefreshKey: 0.0,
+            lastCalendarEventErrorKey: ""
         ])
     }
 

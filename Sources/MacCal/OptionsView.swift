@@ -8,6 +8,8 @@ struct OptionsView: View {
     @AppStorage(MacCalPreferences.showIndiaHolidaysKey) private var showIndiaHolidays = true
     @AppStorage(MacCalPreferences.showCalendarEventsKey) private var showCalendarEvents = false
     @AppStorage(MacCalPreferences.menuBarDisplayFormatKey) private var menuBarDisplayFormat = MenuBarDisplayFormat.calendarIcon.rawValue
+    @AppStorage(MacCalPreferences.lastCalendarEventRefreshKey) private var lastCalendarEventRefresh = 0.0
+    @AppStorage(MacCalPreferences.lastCalendarEventErrorKey) private var lastCalendarEventError = ""
 
     @StateObject private var calendarStore = CalendarOptionsStore()
     @State private var openAtLogin = LaunchAtLoginController.isEnabled
@@ -28,7 +30,7 @@ struct OptionsView: View {
                 .frame(width: 270, alignment: .topLeading)
         }
         .padding(22)
-        .frame(width: 590, height: 360)
+        .frame(width: 620, height: 430)
         .onAppear {
             calendarStore.refresh()
         }
@@ -55,6 +57,7 @@ struct OptionsView: View {
 
             settingsSection("Calendars") {
                 Toggle("Calendar events", isOn: $showCalendarEvents)
+                    .accessibilityHint("Shows dots and hover details for events from selected Apple Calendar calendars.")
                     .onChange(of: showCalendarEvents) { _, isEnabled in
                         if isEnabled {
                             calendarStore.requestAccess()
@@ -64,6 +67,7 @@ struct OptionsView: View {
                 Text(calendarAccessText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if calendarStore.authorizationStatus == .denied || calendarStore.authorizationStatus == .restricted {
                     Button("Open Privacy Settings") {
@@ -77,12 +81,22 @@ struct OptionsView: View {
                 Toggle("India holidays", isOn: $showIndiaHolidays)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var calendarManagementPane: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Calendar List")
-                .font(.headline)
+            HStack {
+                Text("Calendar List")
+                    .font(.headline)
+                Spacer()
+                Button("Refresh") {
+                    calendarStore.refresh()
+                }
+                .controlSize(.small)
+            }
+
+            calendarDiagnostics
 
             if showCalendarEvents, calendarStore.authorizationStatus == .fullAccess {
                 calendarSelectionList
@@ -93,6 +107,7 @@ struct OptionsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -110,9 +125,20 @@ struct OptionsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("\(calendarStore.selectedIDs.count) of \(calendarStore.calendars.count) calendars selected")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text("\(calendarStore.selectedIDs.count) of \(calendarStore.calendars.count) calendars selected")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("All") {
+                        calendarStore.selectAllCalendars()
+                    }
+                    .controlSize(.mini)
+                    Button("None") {
+                        calendarStore.selectNoCalendars()
+                    }
+                    .controlSize(.mini)
+                }
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 7) {
@@ -135,14 +161,32 @@ struct OptionsView: View {
                                     }
                                 }
                             }
+                            .accessibilityHint(group.subtitle ?? "")
                         }
                     }
                     .padding(.trailing, 8)
                 }
-                .frame(height: 255)
+                .frame(height: 270)
             }
         }
         .padding(.top, 2)
+    }
+
+    private var calendarDiagnostics: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Access: \(calendarAccessText)")
+            Text("Calendars: \(calendarStore.calendars.count) loaded, \(calendarStore.selectedIDs.count) selected")
+            Text("Last options refresh: \(formattedDate(calendarStore.lastRefreshDate))")
+            Text("Last event fetch: \(formattedEventRefresh)")
+            if let error = calendarStore.lastErrorText ?? (lastCalendarEventError.isEmpty ? nil : lastCalendarEventError) {
+                Text("Last issue: \(error)")
+                    .lineLimit(2)
+            }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func calendarColorStack(_ colors: [Color]) -> some View {
@@ -175,6 +219,20 @@ struct OptionsView: View {
         @unknown default:
             return "Calendar access unavailable."
         }
+    }
+
+    private var formattedEventRefresh: String {
+        guard lastCalendarEventRefresh > 0 else { return "Never" }
+        return formattedDate(Date(timeIntervalSinceReferenceDate: lastCalendarEventRefresh))
+    }
+
+    private func formattedDate(_ date: Date?) -> String {
+        guard let date else { return "Never" }
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 
     private func openCalendarPrivacySettings() {

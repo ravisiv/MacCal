@@ -35,6 +35,8 @@ final class CalendarEventStore: ObservableObject {
             fetchEvents(start: start, end: end)
         } else if authorizationStatus == .notDetermined {
             requestAccessThenFetch(start: start, end: end)
+        } else {
+            UserDefaults.standard.set("Calendar access is \(authorizationStatus.diagnosticText).", forKey: MacCalPreferences.lastCalendarEventErrorKey)
         }
     }
 
@@ -65,6 +67,7 @@ final class CalendarEventStore: ObservableObject {
                     fetchEvents(start: start, end: end)
                 }
             } catch {
+                UserDefaults.standard.set(error.localizedDescription, forKey: MacCalPreferences.lastCalendarEventErrorKey)
                 NSLog("MacCal calendar access request failed: \(error.localizedDescription)")
             }
         }
@@ -82,6 +85,8 @@ final class CalendarEventStore: ObservableObject {
         let events = eventStore.events(matching: predicate)
             .filter { !$0.isDetached }
             .sorted { $0.startDate < $1.startDate }
+        UserDefaults.standard.set(Date().timeIntervalSinceReferenceDate, forKey: MacCalPreferences.lastCalendarEventRefreshKey)
+        UserDefaults.standard.set("", forKey: MacCalPreferences.lastCalendarEventErrorKey)
         NSLog("MacCal loaded \(events.count) calendar events from \(calendars.count) calendars for visible range \(start) - \(end)")
 
         var next: [String: [CalendarEvent]] = [:]
@@ -153,5 +158,24 @@ final class CalendarEventStore: ObservableObject {
     static func dateKey(for date: Date, calendar: Calendar) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
+    }
+}
+
+private extension EKAuthorizationStatus {
+    var diagnosticText: String {
+        switch self {
+        case .notDetermined:
+            return "not determined"
+        case .restricted:
+            return "restricted"
+        case .denied:
+            return "denied"
+        case .fullAccess:
+            return "full access"
+        case .writeOnly:
+            return "write only"
+        @unknown default:
+            return "unknown"
+        }
     }
 }
