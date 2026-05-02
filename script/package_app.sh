@@ -15,6 +15,7 @@ EXECUTABLE_PATH=""
 ICONSET_DIR="$DIST_DIR/MacCal.iconset"
 ICON_PNG="$DIST_DIR/MacCalIcon-1024.png"
 ICON_PATH="$BUNDLE_PATH/Contents/Resources/AppIcon.icns"
+ICON_BUNDLE_ICNS="$DIST_DIR/icons/MacCal.icns"
 
 cd "$ROOT_DIR"
 
@@ -30,25 +31,15 @@ cp "$EXECUTABLE_PATH" "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"
 chmod +x "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"
 printf "APPL????" > "$BUNDLE_PATH/Contents/PkgInfo"
 
-/usr/bin/swift "$ROOT_DIR/script/render_icon.swift" "$ICON_PNG"
-sips -z 1024 1024 "$ICON_PNG" --out "$DIST_DIR/MacCalIcon-1024-normalized.png" >/dev/null
-cp "$DIST_DIR/MacCalIcon-1024-normalized.png" "$ICON_PNG"
-mkdir -p "$ICONSET_DIR"
-sips -z 16 16 "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16.png" >/dev/null
-sips -z 32 32 "$ICON_PNG" --out "$ICONSET_DIR/icon_16x16@2x.png" >/dev/null
-sips -z 32 32 "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32.png" >/dev/null
-sips -z 64 64 "$ICON_PNG" --out "$ICONSET_DIR/icon_32x32@2x.png" >/dev/null
-sips -z 128 128 "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128.png" >/dev/null
-sips -z 256 256 "$ICON_PNG" --out "$ICONSET_DIR/icon_128x128@2x.png" >/dev/null
-sips -z 256 256 "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256.png" >/dev/null
-sips -z 512 512 "$ICON_PNG" --out "$ICONSET_DIR/icon_256x256@2x.png" >/dev/null
-sips -z 512 512 "$ICON_PNG" --out "$ICONSET_DIR/icon_512x512.png" >/dev/null
-cp "$ICON_PNG" "$ICONSET_DIR/icon_512x512@2x.png"
-if iconutil -c icns "$ICONSET_DIR" -o "$ICON_PATH"; then
+if [[ ! -f "$ICON_BUNDLE_ICNS" ]]; then
+  "$ROOT_DIR/script/create_icon_bundle.sh"
+fi
+
+if cp "$ICON_BUNDLE_ICNS" "$ICON_PATH"; then
   ICON_CREATED="true"
 else
   ICON_CREATED="false"
-  echo "Warning: iconutil could not create AppIcon.icns; continuing without a bundle icon."
+  echo "Warning: could not copy AppIcon.icns; continuing without a bundle icon."
 fi
 
 /usr/libexec/PlistBuddy -c "Clear dict" "$BUNDLE_PATH/Contents/Info.plist" >/dev/null 2>&1 || true

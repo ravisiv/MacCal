@@ -57,6 +57,19 @@ This creates:
 
 The package is currently ad-hoc signed for local use. Public distribution will need Developer ID signing and notarization.
 
+## Icons
+
+```bash
+./script/create_icon_bundle.sh
+```
+
+This creates:
+
+- `dist/icons/MacCal-1024.png`
+- `dist/icons/MacCal.iconset`
+- `dist/icons/MacCal.icns`
+- `dist/MacCal-icons.zip`
+
 ## Release Readiness
 
 Before MacCal is shared as public software, it should have:
