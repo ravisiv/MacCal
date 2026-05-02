@@ -8,6 +8,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
 BUNDLE_PATH="$DIST_DIR/$APP_NAME.app"
 PID_FILE="$DIST_DIR/$APP_NAME.pid"
+ICON_BUNDLE_ICNS="$DIST_DIR/icons/$APP_NAME.icns"
 BIN_DIR=""
 EXECUTABLE_PATH=""
 
@@ -35,6 +36,11 @@ cp "$EXECUTABLE_PATH" "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"
 chmod +x "$BUNDLE_PATH/Contents/MacOS/$APP_NAME"
 printf "APPL????" > "$BUNDLE_PATH/Contents/PkgInfo"
 
+if [[ ! -f "$ICON_BUNDLE_ICNS" ]]; then
+  "$ROOT_DIR/script/create_icon_bundle.sh"
+fi
+cp "$ICON_BUNDLE_ICNS" "$BUNDLE_PATH/Contents/Resources/AppIcon.icns"
+
 cat > "$BUNDLE_PATH/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -52,6 +58,8 @@ cat > "$BUNDLE_PATH/Contents/Info.plist" <<PLIST
   <string>$APP_NAME</string>
   <key>CFBundleDisplayName</key>
   <string>$APP_NAME</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
