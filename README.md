@@ -81,7 +81,7 @@ Before MacCal is shared outside local development, it should have:
 - Developer ID signing with hardened runtime
 - Notarization and stapling
 - A GitHub Release with the packaged zip attached
-- A quick verification pass for calendar permissions, idle CPU, memory use, and popover open latency
+- A quick release smoke test before uploading
 
 ## Notes
 
@@ -89,3 +89,13 @@ Before MacCal is shared outside local development, it should have:
 - Holiday data uses bundled fallbacks and attempts quiet online refresh from official/government sources.
 - The icon bundle is generated locally and reused by both packaging and the build/run helper.
 - MacCal does not include auto-update. Releases are distributed manually through GitHub.
+
+## Release Smoke Test
+
+Before attaching a packaged build to a GitHub Release:
+
+- Open MacCal from the menu bar and confirm the popover appears promptly.
+- Open Options and confirm calendar permission status is shown correctly.
+- Enable calendar events and confirm selected calendars can show event dots.
+- Check that idle CPU is effectively zero when the popover is closed.
+- Check memory use is reasonable for a small menu bar app.
