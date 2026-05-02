@@ -43,6 +43,8 @@ Or use the helper:
 ./script/build_and_run.sh
 ```
 
+The helper stages `dist/MacCal.app`, copies the generated `AppIcon.icns` into the app bundle, signs it ad-hoc, and launches it.
+
 ## Package
 
 ```bash
@@ -54,6 +56,8 @@ This creates:
 
 - `dist/MacCal.app`
 - `dist/MacCal-0.1.0.zip`
+
+The packaged app uses `dist/icons/MacCal.icns` as its bundle icon. If the icon bundle does not exist yet, the package script creates it first.
 
 The package is currently ad-hoc signed for local use. Public distribution will need Developer ID signing and notarization.
 
@@ -84,4 +88,4 @@ Before MacCal is shared as public software, it should have:
 
 - Calendar events use Apple EventKit. Google calendars will appear if they are added to macOS Calendar.
 - Holiday data uses bundled fallbacks and attempts quiet online refresh from official/government sources.
-- The custom app icon generation is still being polished; the app bundle may package without a custom `.icns` until that is fixed.
+- The icon bundle is generated locally and reused by both packaging and the build/run helper.
