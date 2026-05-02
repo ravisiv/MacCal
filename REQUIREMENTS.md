@@ -146,10 +146,9 @@ Build MacCal, a native macOS menu bar calendar app that opens instantly from the
 - Local packaging should continue to produce a usable `.app` and zip artifact.
 - Public distribution should use Developer ID signing, hardened runtime, notarization, and stapling before sharing outside the developer's machine.
 - Packaging validation should check bundle metadata, entitlements, code signature status, and archive output.
-- The app should have a polished `.icns` app icon before public distribution.
-- Auto-update should be deferred until packaging and signing are stable.
-- When auto-update is added, it should use an industry-standard macOS update path such as Sparkle with signed updates, or a documented manual GitHub Releases flow.
-- Auto-update failures must fail quietly and must not interrupt the user during normal calendar use.
+- The app should use the generated polished `.icns` app icon from the local icon bundle.
+- Distribution should be through manual GitHub Releases with the packaged zip attached.
+- The app should not include an auto-update feature for now.
 
 ## Initial Assumptions
 

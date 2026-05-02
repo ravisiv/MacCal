@@ -76,12 +76,11 @@ This creates:
 
 ## Release Readiness
 
-Before MacCal is shared as public software, it should have:
+Before MacCal is shared outside local development, it should have:
 
 - Developer ID signing with hardened runtime
 - Notarization and stapling
-- A polished `.icns` app icon
-- A clear release channel, either manual GitHub Releases or Sparkle signed auto-updates
+- A GitHub Release with the packaged zip attached
 - A quick verification pass for calendar permissions, idle CPU, memory use, and popover open latency
 
 ## Notes
@@ -89,3 +88,4 @@ Before MacCal is shared as public software, it should have:
 - Calendar events use Apple EventKit. Google calendars will appear if they are added to macOS Calendar.
 - Holiday data uses bundled fallbacks and attempts quiet online refresh from official/government sources.
 - The icon bundle is generated locally and reused by both packaging and the build/run helper.
+- MacCal does not include auto-update. Releases are distributed manually through GitHub.
