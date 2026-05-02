@@ -81,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if popover.isShown {
             popover.performClose(sender)
         } else {
+            popover.contentViewController = NSHostingController(rootView: CalendarPopoverView())
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
