@@ -90,6 +90,7 @@ Build MacCal, a native macOS menu bar calendar app that opens instantly from the
 - Event hover text should include enough context to identify the event without cluttering the calendar.
 - Jumping back to today should clear stale hover state and return to the normal month view.
 - The menu bar icon/date should refresh automatically after midnight.
+- The menu bar icon/date must refresh after the Mac wakes from sleep and when MacCal becomes active, so an overnight sleep cannot leave yesterday's date visible.
 - Debug or development builds must not repeatedly add duplicate login items.
 - If calendar events are enabled but no calendars or visible events are available, Options should show a concise status.
 - Options should show calendar diagnostics including permission state, calendar count, selected calendar count, last refresh time, and recent EventKit errors when available.

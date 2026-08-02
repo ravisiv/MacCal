@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var optionsWindow: NSWindow?
     private var preferencesObserver: NSObjectProtocol?
+    private var systemRefreshObservers: [NSObjectProtocol] = []
     private var rightClickMonitor: Any?
     private var midnightTimer: Timer?
     private let popover = NSPopover()
@@ -50,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
         updateStatusItem()
         observePreferences()
+        observeSystemRefreshEvents()
         installRightClickMonitor()
         scheduleMidnightRefresh()
 
@@ -65,6 +67,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if let rightClickMonitor {
             NSEvent.removeMonitor(rightClickMonitor)
+        }
+        for observer in systemRefreshObservers {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            NotificationCenter.default.removeObserver(observer)
         }
         midnightTimer?.invalidate()
     }
@@ -182,6 +188,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func observeSystemRefreshEvents() {
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        systemRefreshObservers.append(
+            workspaceCenter.addObserver(
+                forName: NSWorkspace.didWakeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshForSystemDateChange()
+                }
+            }
+        )
+
+        systemRefreshObservers.append(
+            NotificationCenter.default.addObserver(
+                forName: NSApplication.didBecomeActiveNotification,
+                object: NSApp,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshForSystemDateChange()
+                }
+            }
+        )
+    }
+
     private func updateStatusItem() {
         guard let statusItem, let button = statusItem.button else { return }
 
@@ -229,6 +262,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func refreshAfterMidnight() {
+        refreshForSystemDateChange()
+    }
+
+    private func refreshForSystemDateChange() {
         updateStatusItem()
         popover.contentViewController = NSHostingController(rootView: CalendarPopoverView())
         scheduleMidnightRefresh()
@@ -290,7 +327,7 @@ private enum CalendarMenuIcon {
         day.draw(in: dayRect, withAttributes: dayAttributes)
 
         image.unlockFocus()
-        image.isTemplate = false
+        image.isTemplate = true
         return image
     }
 
