@@ -33,7 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var optionsWindow: NSWindow?
     private var preferencesObserver: NSObjectProtocol?
     private var systemRefreshObservers: [NSObjectProtocol] = []
-    private var rightClickMonitor: Any?
+    private var rightClickMonitors: [Any] = []
     private var midnightTimer: Timer?
     private let popover = NSPopover()
 
@@ -65,8 +65,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let preferencesObserver {
             NotificationCenter.default.removeObserver(preferencesObserver)
         }
-        if let rightClickMonitor {
-            NSEvent.removeMonitor(rightClickMonitor)
+        for monitor in rightClickMonitors {
+            NSEvent.removeMonitor(monitor)
         }
         for observer in systemRefreshObservers {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
@@ -115,28 +115,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func installRightClickMonitor() {
-        rightClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseUp]) { [weak self] event in
-            guard let self else { return event }
-
-            if self.isEventOnStatusButton(event) {
-                Task { @MainActor in
-                    self.showControlMenu()
-                }
-                return nil
-            }
-
-            return event
+        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseUp]) { [weak self] event in
+            guard let self, self.isEventOnStatusButton(event) else { return event }
+            self.showControlMenu()
+            return nil
         }
+
+        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.rightMouseUp]) { [weak self] event in
+            guard let self, self.isEventOnStatusButton(event) else { return }
+            Task { @MainActor in
+                self.showControlMenu()
+            }
+        }
+
+        rightClickMonitors = [localMonitor, globalMonitor].compactMap { $0 }
     }
 
     private func isEventOnStatusButton(_ event: NSEvent) -> Bool {
-        guard let button = statusItem?.button,
-              event.window == button.window else {
+        guard let button = statusItem?.button, let window = button.window else {
             return false
         }
 
-        let point = button.convert(event.locationInWindow, from: nil)
-        return button.bounds.contains(point)
+        if event.window == window {
+            let point = button.convert(event.locationInWindow, from: nil)
+            return button.bounds.contains(point)
+        }
+
+        guard let eventLocation = event.cgEvent?.location else { return false }
+        let buttonRectInWindow = button.convert(button.bounds, to: nil)
+        let buttonRectOnScreen = window.convertToScreen(buttonRectInWindow)
+        return buttonRectOnScreen.contains(eventLocation)
     }
 
     @objc private func showOptions(_ sender: Any?) {
