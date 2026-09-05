@@ -48,7 +48,7 @@ extension Array where Element == Holiday {
             .joined(separator: "  |  ")
     }
 
-    private var groupedByName: [(String, [Holiday])] {
+    var groupedByName: [(String, [Holiday])] {
         var grouped: [String: (String, [Holiday])] = [:]
 
         for holiday in self {

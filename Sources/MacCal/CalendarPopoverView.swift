@@ -136,6 +136,7 @@ struct CalendarPopoverView: View {
                         dayCell(day)
                     }
                     .buttonStyle(.plain)
+                    .zIndex(hoveredDayID == day.id.description ? 1 : 0)
                     .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .onHover { isHovering in
                         hoveredDayID = isHovering && day.hasDetails ? day.id.description : nil
@@ -174,28 +175,34 @@ struct CalendarPopoverView: View {
                     }
                 }
 
+        }
+        .frame(width: 38, height: 34)
+        .overlay(alignment: day.row == 0 ? .top : .bottom) {
             if hoveredDayID == day.id.description, day.hasDetails {
                 detailCard(for: day)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
                     }
-                    .offset(x: hoverCardXOffset(for: day), y: -38)
-                    .offset(y: hoverCardYOffset(for: day))
+                    .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
+                    .offset(x: hoverCardXOffset(for: day), y: day.row == 0 ? 42 : -42)
+                    .allowsHitTesting(false)
                     .zIndex(10)
                     .accessibilityHidden(true)
             }
         }
-        .frame(width: 38, height: 34)
     }
 
     private func detailCard(for day: CalendarDay) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(day.date, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
             if !day.events.isEmpty {
                 ForEach(deduplicatedEvents(for: day).prefix(maxVisibleEvents)) { event in
                     Text(event.displayText(calendar: calendar))
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if deduplicatedEvents(for: day).count > maxVisibleEvents {
@@ -209,16 +216,26 @@ struct CalendarPopoverView: View {
             }
 
             if !day.holidays.isEmpty {
-                Text(day.holidays.displayText)
-                    .lineLimit(2)
+                ForEach(day.holidays.groupedByName, id: \.0) { name, holidays in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(name)
+                            .font(.system(size: 12, weight: .semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(Holiday.Region.allCases.filter { region in
+                            holidays.contains { $0.region == region }
+                        }.map(\.rawValue).joined(separator: ", "))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.primary)
         .multilineTextAlignment(.leading)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
         .frame(width: 190, alignment: .leading)
+        .padding(12)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func hoverCardXOffset(for day: CalendarDay) -> CGFloat {
@@ -234,10 +251,6 @@ struct CalendarPopoverView: View {
         default:
             return 0
         }
-    }
-
-    private func hoverCardYOffset(for day: CalendarDay) -> CGFloat {
-        day.row == 0 ? 58 : 0
     }
 
     private func deduplicatedEvents(for day: CalendarDay) -> [CalendarEvent] {

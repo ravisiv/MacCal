@@ -6,6 +6,7 @@ MacCal is a lightweight native macOS menu bar calendar. It opens from the menu b
 
 - Menu bar calendar icon with weekday and day number
 - Fast popover month calendar
+- Holiday hover details with wrapping names, region labels, and a date heading
 - Today highlight and selected-date highlight
 - Previous/next month navigation
 - Month picker and decade year picker
